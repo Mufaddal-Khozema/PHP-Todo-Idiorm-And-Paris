@@ -42,15 +42,17 @@ $todos = Model::factory('Todos')->order_by_asc('position')->find_many();
         <?php }?>
       </ul> 
 	  <br />
-          
-      <form action="app/add.php" id="add-new" method="post" autocomplete="off">
-        <?php if(isset($_GET['mess']) && $_GET['mess'] === "error") {?>
-          <input type="text" id="new-list-item-text" style="border-color:#ff6666" name="text" placeholder="This field is required"/>
-        <?php } else {?>
-        <input type="text" id="new-list-item-text" name="text" placeholder="What do you want to do"/>
-        <?php }?>
-        <input type="submit" id="add-new-submit" value="Add" class="button" />
-      </form>
+          <div class="form">
+            <form id="add-new" method="" autocomplete="off">
+              <?php if(isset($_GET['mess']) && $_GET['mess'] === "error") {?>
+                <input type="text" id="new-list-item-text" style="border-color:#ff6666" name="text" placeholder="This field is required"/>
+              <?php } else {?>
+              <input type="text" id="new-list-item-text" name="text" placeholder="What do you want to do"/>
+              <?php }?>
+              <input type="submit" id="add-new-submit" value="Add" class="button" />
+            </form>
+
+          </div>
 
       <div class="clear"></div>
     </div>

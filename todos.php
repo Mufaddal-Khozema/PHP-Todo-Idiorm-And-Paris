@@ -1,12 +1,12 @@
 <?php
-require_once('paris.php');
+require_once 'vendor/paris/paris.php';
 class Todos extends Model 
 {
     private $validColors = ['colorRed', 'colorGreen', 'colorBlue', 'colorYellow'];
 
     public function populate(string $text)
     {
-        $maxPosition = Model::factory('Todos')->max('position');
+    $maxPosition = Model::factory('Todos')->max('position');
 
         $this->text = $text;
         $this->color = 'colorRed';

@@ -144,8 +144,6 @@ p {
     border-radius: 5px;
     -moz-border-radius: 5px;
     -webkit-border-radius: 5px;
-    /* transition: opacity 600ms; */
-    /* width: 607px; */
 }
 
 ul {
@@ -178,7 +176,23 @@ ul .item {
     width: 450px;
     display: block;
     position: relative;
-    height: fit-content;
+    height: 1rem;
+    overflow: hidden;
+}
+
+li .dim-alert {
+    position: absolute;
+    left: 0;
+    top: 0;
+    color: red;
+    opacity: 0.75;   
+    overflow: hidden;
+}
+
+form .dim-alert {
+    color: red;
+    opacity: 0.75;   
+    overflow: hidden;
 }
 
 @media (max-width: 510px) {
@@ -307,9 +321,11 @@ ul .item {
     FORM STUFF
 */
 
-form {
+.form {
     display: flex;
+    justify-content: center;
 }
+
 label {
     background: #999;
     color: white;

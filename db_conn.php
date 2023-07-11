@@ -11,8 +11,8 @@ set_include_path(implode(PATH_SEPARATOR, $includePaths));
 
 
 require_once('db.php');
-require_once("idiorm.php");
-require_once("paris.php");
+require_once 'vendor/idiorm/idiorm.php';
+require_once 'vendor/paris/paris.php';
 
 ORM::configure("mysql:host=$hostname;dbname=$db_name");
 ORM::configure('username', $username);

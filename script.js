@@ -16,7 +16,7 @@ const debounce = (func, wait = 40, immediate = true) => {
         if (callNow) func.apply(context, args);
     };
 };
-
+const form = document.querySelector('form');
 const del = document.querySelectorAll(".deletetab");
 const done = document.querySelectorAll(".donetab");
 const color = document.querySelectorAll(".colortab");
@@ -24,6 +24,38 @@ const draggertabs = document.querySelectorAll(".draggertab");
 const list = document.getElementById("list");
 let curOrder = getItemsId();
 const spans = list.querySelectorAll('.item span');
+
+function createTask(e) {
+    e.preventDefault();
+    const text = form.querySelector('input[type=text]');
+    var formData = new FormData();
+    formData.append('request_type', 'create');
+    formData.append('text', text.value);
+
+    fetch('router.php', {
+        method: 'POST',
+        body: formData
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data['error']) {
+                if (form.querySelector('.dim-alert')) {
+                    form.querySelector('.dim-alert').remove();
+                }
+                const exception = document.createElement('p')
+                exception.classList.add('dim-alert');
+                form.insertBefore(exception, text);
+                exception.textContent = data['error'];
+            }
+            else {
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.log('Request error:', error);
+            // Handle the error
+        });
+}
 
 function askForDoubleClick(e) {
     const item = e.target;
@@ -43,20 +75,22 @@ function askForDoubleClick(e) {
 
 function deleteItem(e) {
     var formData = new FormData();
+    formData.append('request_type', 'remove');
     formData.append('id', e.target.id);
     const listItem = this.parentNode;
 
-    fetch('app/remove.php', {
+    fetch('router.php', {
         method: 'POST',
         body: formData
     })
-        .then(response => response.text())
+        .then(response => response.json())
         .then(data => {
-            console.log(data);
-            if (data) {
+            if (data['success']) {
                 listItem.classList.add('hidden');
                 setTimeout(() => listItem.style.display = 'none', 600);
                 curOrder = getItemsId();
+            } else if (data['error']) {
+                console.log(data['error']);
             }
         })
         .catch(error => {
@@ -68,16 +102,19 @@ function deleteItem(e) {
 function handleDone(e) {
     const listItem = this.parentNode.querySelector('span');
     var formData = new FormData();
+    formData.append('request_type', 'update_done');
     formData.append('id', e.target.id);
-    fetch('app/done.php', {
+    fetch('router.php', {
         method: 'POST',
         body: formData
     })
-        .then(response => response.text())
+        .then(response => response.json())
         .then(data => {
-            if (data !== "error") {
-                if (data === '1') listItem.classList.add('crossout');
+            if (data["success"]) {
+                if (data["is_checked"]) listItem.classList.add('crossout')
                 else listItem.classList.remove('crossout');
+            } else {
+                console.log(data['error']);
             }
         })
         .catch(error => {
@@ -89,18 +126,23 @@ function changeColor(e) {
     const listItem = this.parentNode;
     const validColors = ['colorRed', 'colorGreen', 'colorBlue', 'colorYellow'];
     var formData = new FormData();
+    formData.append('request_type', 'update_color');
     formData.append('id', e.target.id);
-    fetch('app/color.php', {
+    fetch('router.php', {
         method: 'POST',
         body: formData
     })
-        .then(response => response.text())
+        .then(response => response.json())
         .then(data => {
-            if (data !== "error") {
+            if (data["success"]) {
+                console.log(data);
+                // Removes any color that was set before
                 listItem.classList.forEach(item => {
                     if (validColors.includes(item)) listItem.classList.remove(item);
                 });
-                listItem.classList.add(`${data}`);
+                listItem.classList.add(`${data["next_color"]}`);
+            } else if (data["error"]) {
+                console.log(data["error"]);
             }
         })
         .catch(error => {
@@ -114,7 +156,7 @@ function getItemsId() {
     return order;
 }
 
-const initSortableList = (e) => {
+const changePositions = (e) => {
     e.preventDefault()
     const draggingItem = list.querySelector('.dragging');
     let siblings = [...list.querySelectorAll(".item:not(.dragging)")];
@@ -124,27 +166,32 @@ const initSortableList = (e) => {
     });
 
     list.insertBefore(draggingItem, nextSibling);
-    const updatedOrder = getItemsId();;
-    let isDifferent = true;
-
+    const updatedOrder = getItemsId();
+    // Check if new order of elements before and after dragging is different
+    let isOrderDifferent = false;
     for (let i = 0; i < updatedOrder.length; i++) {
-        if (curOrder[i] !== updatedOrder[i]) isDifferent = true;
+        if (curOrder[i] !== updatedOrder[i]) isOrderDifferent = true;
     }
-
-    if (isDifferent) {
+    // Only calling if order is different
+    if (isOrderDifferent) {
+        console.log(JSON.stringify(updatedOrder));
         var formData = new FormData();
-        formData.append(`values`, updatedOrder.length);
-        for (let i = 0; i < updatedOrder.length; i++) {
-            formData.append(`${i}`, updatedOrder[i]);
-        }
-        fetch('app/drag.php', {
+        formData.append('request_type', 'update_positions');
+        formData.append(`new_order`, JSON.stringify(updatedOrder));
+        // for (let i = 0; i < updatedOrder.length; i++) {
+        //     formData.append(`${i}`, updatedOrder[i]);
+        // }
+        fetch('router.php', {
             method: 'POST',
-            body: formData
+            body: formData,
+            // headers: {                              
+            //     "Content-Type": "application/json"    
+            // }
         })
-            .then(response => response.text())
+            .then(response => response.json())
             .then(data => {
-                if (data !== "error") {
-                    console.log(data);
+                if (data['error']) {
+                    console.log(data['error']);
                 }
             })
             .catch(error => {
@@ -165,23 +212,31 @@ const handleEdit = (e) => {
     if (e.key === 'Enter') {
         e.preventDefault(); // Prevent form submission or other default behavior
         const span = e.target;
+        const li = span.parentNode;
         // Enter key is pressed
         const inputValue = span.textContent;
         var formData = new FormData();
+        formData.append('request_type', 'update_text');
         formData.append('id', span.id);
         formData.append('text', inputValue)
-        fetch('app/edit.php', {
+        fetch('router.php', {
             method: 'POST',
             body: formData
         })
-            .then(response => response.text())
+            .then(response => response.json())
             .then(data => {
-                console.log(data);
-                if (data !== "error") {
-                    if (data) {
-                        span.textContent = inputValue;
-                        span.setAttribute("contenteditable", "false");
+                if (data['error']) {
+                    if (li.querySelector('.dim-alert')) {
+                        li.querySelector('.dim-alert').remove();
                     }
+                    const exception = document.createElement('p');
+                    li.appendChild(exception);
+                    exception.classList.add('dim-alert');
+                    exception.textContent = data['error'];
+                } else {
+                    (li.querySelector('p')) ? li.querySelector('p').remove() : null;
+                    span.textContent = data['text'];
+                    span.setAttribute("contenteditable", "false");
                 }
             })
             .catch(error => {
@@ -204,6 +259,8 @@ draggertabs.forEach(item => {
     });
 
 });
+
 list.addEventListener("dragenter", e => e.preventDefault());
-list.addEventListener('dragover', debounce(initSortableList));
+list.addEventListener('dragover', debounce(changePositions));
 spans.forEach(span => span.addEventListener('dblclick', handleSpan));
+form.addEventListener('submit', createTask);
